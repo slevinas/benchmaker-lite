@@ -1,0 +1,32 @@
+version: "3.9"
+
+services:
+  api:
+    build: ./api
+    container_name: benchmaker_api
+    ports:
+      - "8000:8000"
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+    depends_on:
+      - clickhouse
+      - otel-collector
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    container_name: benchmaker_clickhouse
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - ./clickhouse/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: benchmaker_otel_collector
+    command: ["--config=/otel-local-config.yaml"]
+    volumes:
+      - ./otel/collector-config.yaml:/otel-local-config.yaml
+    ports:
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver

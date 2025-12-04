@@ -4,6 +4,13 @@ import time
 import httpx
 
 from .utils import summarize_latencies
+from benchmark_client.clickhouse import save_summary
+
+
+# REPO_ROOT = Path(__file__).resolve().parents[1]
+# ENV_FILE = REPO_ROOT / ".env"
+# _load_dotenv(ENV_FILE)
+# logger.info(f"[conftest] Loaded .env from {ENV_FILE}")
 
 API_URL = "http://localhost:8000/api/vector/add"
 CONCURRENCY = 10
@@ -29,12 +36,20 @@ async def run_benchmark() -> None:
     await asyncio.gather(*tasks)
 
     summary = summarize_latencies(latencies)
+    # print("=== Benchmark Summary ===")
+    # print(f"Total requests: {summary['count']}")
+    # print(f"Avg latency:   {summary['avg']:.4f}s")
+    # print(f"P95 latency:   {summary['p95']:.4f}s")
+    # print(f"Min latency:   {summary['min']:.4f}s")
+    # print(f"Max latency:   {summary['max']:.4f}s")
     print("=== Benchmark Summary ===")
-    print(f"Total requests: {summary['count']}")
-    print(f"Avg latency:   {summary['avg']:.4f}s")
-    print(f"P95 latency:   {summary['p95']:.4f}s")
-    print(f"Min latency:   {summary['min']:.4f}s")
-    print(f"Max latency:   {summary['max']:.4f}s")
+    for k, v in summary.items():
+        print(f"{k}: {v}")
+
+    # Save the summary into ClickHouse
+    print("\nSaving summary to ClickHouse...")
+    await save_summary(summary, endpoint=API_URL)
+    print("Saved.")
 
 
 if __name__ == "__main__":

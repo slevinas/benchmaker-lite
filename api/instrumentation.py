@@ -1,3 +1,4 @@
+import os
 import logging
 
 from fastapi import FastAPI
@@ -19,16 +20,29 @@ def init_instrumentation(app: FastAPI) -> None:
 
     This sends traces to an OTEL Collector via OTLP/gRPC.
     """
-    resource = Resource(attributes={
-        SERVICE_NAME: SERVICE_NAME_VALUE,
-    })
+    # resource = Resource(attributes={
+    #     SERVICE_NAME: SERVICE_NAME_VALUE,
+    # })
+
+    # provider = TracerProvider(resource=resource)
+    # span_exporter = OTLPSpanExporter(endpoint=OTEL_EXPORTER_ENDPOINT, insecure=True)
+    # span_processor = BatchSpanProcessor(span_exporter)
+
+    # provider.add_span_processor(span_processor)
+    # trace.set_tracer_provider(provider)
+    resource = Resource.create(
+        {"service.name": os.getenv("OTEL_SERVICE_NAME", "benchmaker-lite-api")}
+    )
 
     provider = TracerProvider(resource=resource)
-    span_exporter = OTLPSpanExporter(endpoint=OTEL_EXPORTER_ENDPOINT, insecure=True)
-    span_processor = BatchSpanProcessor(span_exporter)
-
-    provider.add_span_processor(span_processor)
     trace.set_tracer_provider(provider)
+
+    exporter = OTLPSpanExporter(
+        endpoint=os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "otel-collector:4317"),
+        insecure=os.getenv("OTEL_EXPORTER_OTLP_INSECURE", "true") == "true",
+    )
+
+    provider.add_span_processor(BatchSpanProcessor(exporter))
 
     FastAPIInstrumentor.instrument_app(app)
 

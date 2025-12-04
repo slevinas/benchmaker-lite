@@ -8,6 +8,8 @@ services:
       - "8000:8000"
     environment:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_INSECURE: "true"
+      OTEL_SERVICE_NAME: "benchmaker-lite-api"
     depends_on:
       - clickhouse
       - otel-collector
@@ -20,6 +22,18 @@ services:
       - "9000:9000"
     volumes:
       - ./clickhouse/init.sql:/docker-entrypoint-initdb.d/init.sql
+    
+    environment:
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: benchmaker
+      CLICKHOUSE_DB: default
+
+      
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8123/?query=SELECT%201"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   otel-collector:
     image: otel/opentelemetry-collector-contrib:latest
@@ -28,5 +42,8 @@ services:
     volumes:
       - ./otel/collector-config.yaml:/otel-local-config.yaml
     ports:
-      - "4317:4317"   # OTLP gRPC receiver
-      - "4318:4318"   # OTLP HTTP receiver
+      - "4317:4317" # OTLP gRPC receiver
+      - "4318:4318" # OTLP HTTP receiver
+    depends_on:
+      [clickhouse]
+      # condition: service_healthy

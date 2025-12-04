@@ -1,4 +1,5 @@
 import os
+import sys
 
 OTEL_EXPORTER_ENDPOINT = os.getenv(
     "OTEL_EXPORTER_OTLP_ENDPOINT",

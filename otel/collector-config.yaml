@@ -2,20 +2,33 @@ receivers:
   otlp:
     protocols:
       grpc:
+        endpoint: 0.0.0.0:4317
       http:
+        endpoint: 0.0.0.0:4318
 
 processors:
-  batch: {}
+  batch:
+    timeout: 5s
+    send_batch_size: 1000
 
 exporters:
-  # For now we just log spans to the collector stdout.
-  # Later we can add a ClickHouse exporter or OTLP to another backend.
-  debug:
-    verbosity: detailed
+  clickhouse:
+    # Talk to the clickhouse service on the docker network
+    endpoint: "tcp://clickhouse:9000?dial_timeout=10s&compress=lz4"
+    database: "otel"
+    username: "default"
+    password: "benchmaker"
+    async_insert: true
+    create_schema: true # let exporter create otel_traces, otel_logs, otel_metrics_* tables
 
 service:
   pipelines:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [debug]
+      exporters: [debug, clickhouse]
+
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug, clickhouse]

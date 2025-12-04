@@ -1,3 +1,10 @@
+CREATE DATABASE IF NOT EXISTS otel;
+
+-- existing content below (your benchmark_results etc.)
+
+
+
+
 -- Simple table to store benchmark run summaries.
 CREATE TABLE IF NOT EXISTS benchmark_results (
     timestamp       DateTime   DEFAULT now(),

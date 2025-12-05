@@ -12,23 +12,27 @@ processors:
     send_batch_size: 1000
 
 exporters:
-  clickhouse:
-    # Talk to the clickhouse service on the docker network
-    endpoint: "tcp://clickhouse:9000?dial_timeout=10s&compress=lz4"
-    database: "otel"
-    username: "default"
-    password: "benchmaker"
-    async_insert: true
-    create_schema: true # let exporter create otel_traces, otel_logs, otel_metrics_* tables
+  # Simple stdout exporter for debugging
+  debug:
+    verbosity: basic
+
+  # ClickHouse exporter for traces + metrics
+  # clickhouse:
+  #   endpoint: "tcp://clickhouse:9000?dial_timeout=10s&compress=lz4"
+  #   database: "otel"
+  #   username: "default"
+  #   password: "benchmaker"
+  #   async_insert: true
+  #   create_schema: true
 
 service:
   pipelines:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [debug, clickhouse]
+      exporters: [debug]
 
     metrics:
       receivers: [otlp]
       processors: [batch]
-      exporters: [debug, clickhouse]
+      exporters: [debug]

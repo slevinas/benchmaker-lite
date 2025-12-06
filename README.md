@@ -1,168 +1,184 @@
-# benchmaker-lite
+# **Benchmaker-Lite — FastAPI Benchmarking & Observability Pipeline**
 
-A lightweight, public-safe example of a **benchmarking + observability pipeline** inspired by real-world work:
+<p align="left">
+  <img src="https://img.shields.io/badge/Python-3.11+-blue.svg" />
+  <img src="https://img.shields.io/badge/FastAPI-Instrumented%20with%20OTel-009688.svg" />
+  <img src="https://img.shields.io/badge/ClickHouse-Analytics%20DB-yellow.svg" />
+  <img src="https://img.shields.io/badge/OpenTelemetry-Collector%20Pipeline-purple.svg" />
+  <img src="https://img.shields.io/badge/Asyncio-Concurrency%20Testing-orange.svg" />
+  <img src="https://img.shields.io/badge/Docker-Compose-green.svg" />
+  <img src="https://img.shields.io/badge/Status-Active%20Project-brightgreen.svg" />
+</p>
 
-- Python async benchmark client (`httpx` + `asyncio`)
-- FastAPI service with vector operations
-- OpenTelemetry instrumentation for HTTP requests
-- OTEL Collector pipeline (initially exporting to debug logs)
-- ClickHouse for storing benchmark summaries
-- Docker Compose for local development
-- GitHub Actions CI (basic)
+## Table of Contents
 
-> ⚠️ Note: This repo is intentionally small and generic.  
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Components](#components)
+  - [FastAPI Benchmark Target](#1-fastapi-benchmark-target)
+  - [Async Benchmark Client](#2-async-benchmark-client)
+  - [ClickHouse Layer](#3-clickhouse--db-layer)
+  - [OpenTelemetry Collector](#4-opentelemetry-collector)
+- [Schema](#schema)
+- [Running the Stack](#running-the-stack)
+  - [Start Services](#1-start-services)
+  - [Run a Benchmark](#2-run-a-benchmark)
+  - [Query Results](#3-query-results)
+- [Why This Project Exists](#why-this-project)
+- [Project Internals](#project-internals)
+- [Roadmap](#roadmap)
+- [License](#license)
 
+Benchmaker-Lite is a **fully containerized benchmarking and observability system** built around:
 
+- **FastAPI** (instrumented with OpenTelemetry)
+- **OpenTelemetry Collector** (file + debug exporters)
+- **ClickHouse** (analytics DB)
+- **Async Python benchmark client** (httpx + asyncio)
+- **Custom ClickHouse client** (env-driven config, JSONEachRow inserts)
 
+It demonstrates real-world DevOps, observability, performance engineering, and backend automation patterns.
 
 ---
-# **📊 Benchmaker-Lite — FastAPI Benchmarking + Observability Pipeline**
 
-A small but complete DevOps + Observability project demonstrating:
+# 📐 **Architecture Overview**
 
-* FastAPI service instrumented with **OpenTelemetry**
-* Async benchmark client using **httpx + asyncio**
-* OpenTelemetry Collector receiving traces/metrics
-* Exporting telemetry into **ClickHouse**
-* Docker Compose orchestration across all components
-* Benchmark storage, analysis queries, and end-to-end reproducibility
+```
+                      ┌──────────────────────┐
+                      │   Benchmark Client    │
+                      │  (asyncio + httpx)    │
+                      │  generate load / run  │
+                      └───────────┬───────────┘
+                                  │
+                                  ▼
+                     POST /api/vector/add (FastAPI)
+                                  │
+                                  ▼
+                ┌────────────────────────────────────┐
+                │        FastAPI Service              │
+                │  - Vector-add endpoint              │
+                │  - OTel instrumentation (SDK)       │
+                │  - Emits traces & metrics           │
+                └─────────────────┬───────────────────┘
+                                  │  OTLP/gRPC
+                                  ▼
+               ┌──────────────────────────────────────┐
+               │        OpenTelemetry Collector        │
+               │  - Receives telemetry                 │
+               │  - Batching processor                 │
+               │  - Exports: file(traces), file(metrics) │
+               │  - Debug exporter (stdout)            │
+               └─────────────────┬────────────────────┘
+                                  │
+                              ETL / Ingest
+                                  │
+                                  ▼
+              ┌────────────────────────────────────────┐
+              │               ClickHouse                │
+              │  - schema: benchmark_results           │
+              │  - JSONEachRow inserts                 │
+              │  - analytical queries (p95, p99, etc.) │
+              └────────────────────────────────────────┘
+```
 
 ---
 
-## **🚀 Features**
+# ⚙️ **Components**
 
-### **Benchmarking**
+### **1. `/api` — FastAPI Benchmark Target**
 
-* Async Python client (`httpx`) sending thousands of requests
-* Measures: p95/p99 latency, min/max, total throughput
-* Stores summary into ClickHouse (`benchmark_results` table)
+- Implements `/api/vector/add`
+- Instrumented with OpenTelemetry SDK
+- Emits traces & metrics to OTEL Collector
+- Designed for load-generation & latency measurement
 
-### **Observability**
+### **2. `/benchmark_client` — Async Python Runner**
 
-* Automatic OTEL instrumentation of FastAPI routes
-* Real traces emitted per benchmark request
-* Collector pipelines exporting to ClickHouse
-* Schema auto-created (`otel_traces`, `otel_metrics_*`)
+- Uses `httpx.AsyncClient` + `asyncio`
+- Launches concurrent workers
+- Computes:
 
-### **DevOps**
+  - avg latency
+  - p95, p99
+  - min/max
 
-* Multi-container Docker Compose setup
-* Resilient startup (collector waits for ClickHouse)
-* Configuration via environment variables
-* All services run locally with one command:
+- Stores structured results into ClickHouse
+- Can fetch and display recent benchmark history
+
+### **3. `/clickhouse` — DB Layer**
+
+Includes:
+
+- `client.py` (custom ClickHouse HTTP client)
+- `init.sql` (schema definitions)
+- Config-driven table design for benchmark analytics
+
+Table:
+
+```sql
+CREATE TABLE benchmark_results (
+    timestamp       DateTime DEFAULT now(),
+    endpoint        String,
+    avg_latency     Float64,
+    p95_latency     Float64,
+    p99_latency     Float64,
+    min_latency     Float64,
+    max_latency     Float64,
+    total_requests  UInt32
+) ENGINE = MergeTree()
+ORDER BY (timestamp, endpoint);
+```
+
+### **4. `/otel` — OpenTelemetry Collector**
+
+- Receives FastAPI telemetry
+- Writes traces/metrics to local file
+- Debug exporter for introspection
+
+---
+
+# 🐳 **Running the Entire Pipeline**
+
+### **1. Start dependencies**
 
 ```bash
 docker-compose up --build
 ```
 
----
+This launches:
 
-## **🧱 Architecture Diagram**
+- ClickHouse
+- OTEL Collector
+- FastAPI benchmark service
 
-```
-                        ┌────────────────────────┐
-                        │     Benchmark Client    │
-                        │  (async httpx load gen) │
-                        └────────────┬────────────┘
-                                     │
-                                     ▼
-                         HTTP Requests (load)
-                                     │
-                                     ▼
-                   ┌───────────────────────────────── ┐
-                   │             FastAPI              │
-                   │  - /vector/add benchmark route   │
-                   │  - /health                       │
-                   ├───────────────────────────────── ┤
-                   │  OTEL SDK Instrumentation        │
-                   │  - Traces emitted per request    │
-                   │  - Metrics (latency counters)    │
-                   └──────────────────┬───────────────┘
-                                      │ OTLP (gRPC/HTTP)
-                                      ▼
-                        ┌────────────────────────────────┐
-                        │  OpenTelemetry Collector        │
-                        │---------------------------------│
-                        │ Receivers:                      │
-                        │   - otlp/http                   │
-                        │   - otlp/grpc                   │
-                        │ Processors:                     │
-                        │   - batch                       │
-                        │   - (optional transforms)       │
-                        │ Exporters:                      │
-                        │   - debug                       │
-                        │   - clickhouse (traces/metrics) │
-                        └──────────────────┬──────────────┘
-                                           │ TCP (9000)
-                                           ▼
-                         ┌──────────────────────────────────┐
-                         │            ClickHouse             │
-                         │-----------------------------------│
-                         │  Database: otel                   │
-                         │  Tables created automatically:    │
-                         │    - otel_traces                  │
-                         │    - otel_logs                    │
-                         │    - otel_metrics_*               │
-                         │                                   │
-                         │  Benchmark Results (manual insert)│
-                         │  stored into: default.bench...    │
-                         └───────────────────────────────────┘
-```
-
----
-
-## **🧪 Running a Benchmark**
+### **2. Run a benchmark**
 
 ```bash
 python -m benchmark_client.run_benchmark
 ```
 
-Example output:
+Output:
 
 ```
-Benchmark Summary
-Total requests: 5000
-Avg latency: 0.0080s
-p95 latency: 0.021s
-p99 latency: 0.041s
-Min latency: 0.0017s
-Max latency: 0.0876s
+=== Benchmark Summary ===
+count: 500
+avg: 0.0103s
+p95: 0.0199s
+p99: 0.0642s
+min: 0.0041s
+max: 0.0888s
+
+Saving summary to ClickHouse...
+Saved.
+
+Fetching recent results...
+timestamp                  avg_latency     p95_latency   total_requests
+-----------------------------------------------------------------------
+2025-12-05 13:24:33        0.0103           0.0199         500
+...
 ```
 
----
-
-## **📦 Docker Stack**
-
-| Service              | Description                                          |
-| -------------------- | ---------------------------------------------------- |
-| **FastAPI app**      | Handles `/vector/add` requests and emits OTEL traces |
-| **OTEL Collector**   | Receives OTLP data and exports to ClickHouse         |
-| **ClickHouse**       | Stores traces, metrics, and benchmark results        |
-| **Benchmark Client** | Generates concurrent load using asyncio              |
-
----
-
-## **🔍 Querying Telemetry in ClickHouse**
-
-### Recent traces:
-
-```sql
-SELECT Timestamp, ServiceName, SpanName
-FROM otel_traces
-ORDER BY Timestamp DESC
-LIMIT 20;
-```
-
-### p95 latency (example for deeper analysis):
-
-```sql
-SELECT
-  quantile(0.95)(Duration) AS p95_latency
-FROM otel_traces
-WHERE ServiceName = 'benchmaker-lite-api';
-```
-
-### Benchmark summaries:
+### **3. Query results manually**
 
 ```sql
 SELECT *
@@ -172,318 +188,26 @@ LIMIT 10;
 ```
 
 ---
----
 
-## 🚀 Getting Started
+# 📦 **Why This Project?**
 
-### 1. Start the stack
+This system simulates a **real observability + benchmarking pipeline**:
 
-```bash
-docker-compose up --build
-```
----
+- Microservice exposing a performance-critical endpoint
+- Telemetry instrumentation & OTEL ingestion
+- Async load generation (multi-worker)
+- Persistance to ClickHouse for analytics
+- Queryable history of performance metrics
 
+It showcases:
 
-
-
-
----
-##### Running the docker compose walkthrough and fixing plan
-
-Love this, this is exactly the right instinct: understand the moving pieces before we crank up the complexity. 😊
-
-I’ll do two things in this reply:
-
-1. Walk through your **current `docker-compose.yml` and its execution flow** so it’s crystal clear.
-2. Confirm why the **build will fail right now** and give you a **simple Dockerfile + small tweaks** so `docker-compose up` actually works.
-
-We’ll handle the **“B: full OTel traces + metrics into ClickHouse”** in the *next* step, after the basics are solid.
+- DevOps automation
+- Distributed tracing
+- Telemetry pipelines
+- Backend benchmarking
+- Async Python tooling
+- ClickHouse data engineering
+- Docker Compose orchestration
+- Practical, production-style architecture
 
 ---
-
-## 1️⃣ What your current `docker-compose.yml` is doing
-
-This is (roughly) what we have:
-
-```yaml
-version: "3.9"
-
-services:
-  api:
-    build: ./api
-    container_name: benchmaker_api
-    ports:
-      - "8000:8000"
-    environment:
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
-    depends_on:
-      - clickhouse
-      - otel-collector
-
-  clickhouse:
-    image: clickhouse/clickhouse-server:latest
-    container_name: benchmaker_clickhouse
-    ports:
-      - "8123:8123"
-      - "9000:9000"
-    volumes:
-      - ./clickhouse/init.sql:/docker-entrypoint-initdb.d/init.sql
-
-  otel-collector:
-    image: otel/opentelemetry-collector-contrib:latest
-    container_name: benchmaker_otel_collector
-    command: ["--config=/otel-local-config.yaml"]
-    volumes:
-      - ./otel/collector-config.yaml:/otel-local-config.yaml
-    ports:
-      - "4317:4317"   # OTLP gRPC receiver
-      - "4318:4318"   # OTLP HTTP receiver
-```
-
-### Compose execution flow when you run `docker-compose up`:
-
-1. **Compose looks at each service**: `api`, `clickhouse`, `otel-collector`.
-
-2. For each service:
-
-   * If it has **`image:`**, it pulls the image (if needed).
-   * If it has **`build:`**, it builds a Docker image from that path.
-
-3. In your case:
-
-   * `clickhouse` → pulls `clickhouse/clickhouse-server:latest`
-   * `otel-collector` → pulls `otel/opentelemetry-collector-contrib:latest`
-   * `api` → tries to **build** from `./api` (this is where it will currently fail)
-
-4. **`depends_on`** for `api`:
-
-   * Compose will *start* `clickhouse` and `otel-collector` containers before `api`.
-   * It does **not** wait for them to be “healthy,” only started. (We can add healthchecks later if we want.)
-
-5. **Networking**:
-
-   * All services are on the same default network.
-   * Each service name (`api`, `clickhouse`, `otel-collector`) becomes a DNS name inside the network.
-   * That’s why this env var works inside the `api` container:
-
-     ```yaml
-     OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
-     ```
-
-     From inside the `api` container, `otel-collector` resolves to the collector’s container IP.
-
-6. **Volumes**:
-
-   * `clickhouse` mounts `./clickhouse/init.sql` into `/docker-entrypoint-initdb.d/init.sql`.
-
-     * ClickHouse’s entrypoint runs all `.sql` files in that directory on first startup.
-     * That creates your `benchmark_results` table automatically.
-   * `otel-collector` mounts your local `./otel/collector-config.yaml` as `/otel-local-config.yaml` inside the container, then uses that file via the `command:`.
-
-7. **Ports**:
-
-   * `api: 8000:8000` → you can hit `http://localhost:8000` from your host.
-   * `clickhouse: 8123:8123` → HTTP interface on `http://localhost:8123`.
-   * `clickhouse: 9000:9000` → native TCP protocol (for drivers).
-   * `otel-collector: 4317:4317`, `4318:4318` → OTLP endpoints accessible from the host (and containers).
-
-So conceptually, the flow is:
-
-* **Benchmark client on host** → calls `http://localhost:8000` → hits **api container**
-* **API** → emits traces via OTel SDK → sends spans to `http://otel-collector:4317` (inside network)
-* **Collector** → processes/export traces (right now only debug; later to ClickHouse)
-* **Benchmark client** → writes summary to ClickHouse via `http://localhost:8123` (host→container mapping)
-
----
-
-## 2️⃣ Why `docker-compose` build will fail right now
-
-You’re absolutely right: with the current config, this will likely fail:
-
-```bash
-docker-compose up
-```
-
-…because of this line:
-
-```yaml
-  api:
-    build: ./api
-```
-
-Compose expects a **Dockerfile in `./api`**, but we haven’t created one yet. So it will error with something like:
-
-> `ERROR: Cannot locate specified Dockerfile: Dockerfile`
-> or
-> `failed to solve: failed to read dockerfile: open /api/Dockerfile: no such file or directory`
-
-So your intuition is correct. ✅
-
----
-
-## 3️⃣ Fixing this: add a simple `Dockerfile` for the API
-
-Let’s make the minimal thing that works and is clear.
-
-### Step 1: Create `api/requirements.txt`
-
-```txt
-fastapi
-uvicorn[standard]
-opentelemetry-api
-opentelemetry-sdk
-opentelemetry-exporter-otlp
-opentelemetry-instrumentation-fastapi
-```
-
-You can add more later (e.g. pydantic, etc.), but FastAPI already pulls that in.
-
----
-
-### Step 2: Create `api/Dockerfile`
-
-In `api/Dockerfile`:
-
-```dockerfile
-FROM python:3.11-slim
-
-# Install system deps (optional but useful)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl ca-certificates && \
-    rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
-
-# Copy requirements and install
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy the actual app code
-COPY . .
-
-# Expose the FastAPI port
-EXPOSE 8000
-
-# Start the app with uvicorn
-CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
-```
-
-> Note: the key here is that the module path `api.main:app` matches your package structure
-> (i.e., the container sees `/app/api/main.py` with `app = create_app()`).
-
-Your repo structure should look like:
-
-```text
-benchmaker-lite/
-├─ api/
-│  ├─ main.py
-│  ├─ routes.py
-│  ├─ instrumentation.py
-│  ├─ config.py
-│  ├─ requirements.txt
-│  └─ Dockerfile
-...
-```
-
----
-
-### Step 3: Validate the build and start sequence
-
-From the project root:
-
-```bash
-# Build the api image
-docker-compose build api
-
-# Then start everything
-docker-compose up
-```
-
-You should see:
-
-* ClickHouse logs showing startup + table creation
-* OTel Collector logs with “Starting…” and debug exporter info
-* API logs from uvicorn starting on `0.0.0.0:8000`
-
-Then you can hit:
-
-```bash
-curl http://localhost:8000/health
-```
-
-And run the benchmark (from host):
-
-```bash
-python -m benchmark_client.run_benchmark
-```
-
----
-
-## 4️⃣ Recap of the execution flow (with Dockerfile in place)
-
-When you do:
-
-```bash
-docker-compose up
-```
-
-1. **Builds `api` image** using `api/Dockerfile`
-2. **Starts `clickhouse`**:
-
-   * Runs `init.sql`, creates `benchmark_results` table
-3. **Starts `otel-collector`**:
-
-   * Loads `collector-config.yaml`
-   * Opens OTLP endpoints
-4. **Starts `api`**:
-
-   * Runs uvicorn, exposes port 8000
-   * OTel SDK inside the app connects to `http://otel-collector:4317`
-5. You then **run the benchmark client** from your host:
-
-   * Calls the API
-   * API emits traces to collector
-   * Benchmark client writes summary into ClickHouse
-
-This is the foundational flow we’ll extend to **full traces + metrics → ClickHouse** in the next step.
-
----
-
-## 🔜 Next: Implementing your choice **B** (full OTel traces + metrics into ClickHouse)
-
-Now that we’re on the same page about:
-
-* `docker-compose` behavior
-* How the containers interact
-* Why the build was failing and how to fix it
-
-Next step will be to:
-
-1. Add ClickHouse tables for OTel traces & metrics
-2. Update `collector-config.yaml` to:
-
-   * receive OTLP traces + metrics
-   * process them
-   * export them to ClickHouse
-3. Validate with:
-
-   * generating some requests
-   * querying ClickHouse for spans/metrics
-
----
-
-If you’d like, your very next move could be:
-
-1. Add `api/requirements.txt`
-2. Add `api/Dockerfile`
-3. Run:
-
-```bash
-docker-compose build api
-docker-compose up
-```
-
-If something blows up, send me the error text, and I’ll help you fix it.
-Once it starts cleanly, we jump straight into **OTel → ClickHouse traces + metrics (Option B)**.
-
-

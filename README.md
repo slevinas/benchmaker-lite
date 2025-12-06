@@ -29,7 +29,9 @@
 - [Roadmap](#roadmap)
 - [License](#license)
 
-Benchmaker-Lite is a **fully containerized benchmarking and observability system** built around:
+---
+
+### Benchmaker-Lite is a **fully containerized benchmarking and observability system** built around:
 
 - **FastAPI** (instrumented with OpenTelemetry)
 - **OpenTelemetry Collector** (file + debug exporters)

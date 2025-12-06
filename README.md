@@ -45,7 +45,7 @@ It demonstrates real-world DevOps, observability, performance engineering, and b
 
 ---
 
-#  **Architecture Overview**
+# **Architecture Overview**
 
 ```
                       ┌──────────────────────┐
@@ -216,7 +216,6 @@ It showcases:
 
 ---
 
-
 # **🧩 Project Internals**
 
 This project is structured around three core components:
@@ -225,34 +224,36 @@ This project is structured around three core components:
 
 ## **1. FastAPI Service (`/api`)**
 
-* Exposes benchmark endpoints (e.g., `/vector/add`).
-* Instrumented with **OpenTelemetry SDK**.
-* Sends traces/metrics to the **OpenTelemetry Collector** via OTLP/gRPC.
-* Emits latency events that the benchmark client measures.
+- Exposes benchmark endpoints (e.g., `/vector/add`).
+- Instrumented with **OpenTelemetry SDK**.
+- Sends traces/metrics to the **OpenTelemetry Collector** via OTLP/gRPC.
+- Emits latency events that the benchmark client measures.
 
 ---
 
 ## **2. Benchmark Client (`/benchmark_client`)**
 
-* Async load generator using **httpx + asyncio**.
-* Computes:
+- Async load generator using **httpx + asyncio**.
+- Computes:
 
-  * average latency
-  * p95 / p99 latency
-  * min/max latency
-* Saves structured summaries into ClickHouse using the **ClickHouseClient**.
-* Optionally ETLs OTEL trace files into analytical tables.
+  - average latency
+  - p95 / p99 latency
+  - min/max latency
+
+- Saves structured summaries into ClickHouse using the **ClickHouseClient**.
+- Optionally ETLs OTEL trace files into analytical tables.
 
 ---
 
 ## **3. ClickHouse Layer (`/clickhouse`)**
 
-* Contains:
+- Contains:
 
-  * database schema (`init.sql`)
-  * **ClickHouseClient** (Python wrapper for HTTP API)
-  * future ETL tools for traces/metrics
-* Central store for benchmark analytics.
+  - database schema (`init.sql`)
+  - **ClickHouseClient** (Python wrapper for HTTP API)
+  - future ETL tools for traces/metrics
+
+- Central store for benchmark analytics.
 
 Example summary row:
 
@@ -261,27 +262,28 @@ Example summary row:
 | 500            | 0.008       | 0.021       | now()     |
 
 ---
+
 ## 📌 Roadmap
 
 **Near-term (1–2 weeks)**
 
-* [ ] Add latency histograms via OTEL Metrics SDK
-* [ ] Add ClickHouse aggregation views (p95, p99, percentiles)
-* [ ] Add automatic CSV export for benchmark reports
-* [ ] Add Docker image publishing (GHCR)
+- [ ] Add latency histograms via OTEL Metrics SDK
+- [ ] Add ClickHouse aggregation views (p95, p99, percentiles)
+- [ ] Add automatic CSV export for benchmark reports
+- [ ] Add Docker image publishing (GHCR)
 
 **Mid-term (1 month)**
 
-* [ ] Add distributed load testing mode (multiple workers)
-* [ ] Store OTEL traces in ClickHouse for drill-down analysis
-* [ ] Add Grafana dashboards (ClickHouse plugin)
+- [ ] Add distributed load testing mode (multiple workers)
+- [ ] Store OTEL traces in ClickHouse for drill-down analysis
+- [ ] Add Grafana dashboards (ClickHouse plugin)
 
 **Long-term (future)**
 
-* [ ] Support multiple benchmark targets
-* [ ] Add gRPC benchmark target
-* [ ] Add synthetic failure injection + resiliency testing mode
-* [ ] Convert project into reusable Python package (`pip install benchmaker-lite`)
+- [ ] Support multiple benchmark targets
+- [ ] Add gRPC benchmark target
+- [ ] Add synthetic failure injection + resiliency testing mode
+- [ ] Convert project into reusable Python package (`pip install benchmaker-lite`)
 
 ---
 
@@ -294,7 +296,7 @@ The benchmark client runs a high-concurrency async workload against the FastAPI
 endpoint (`/api/vector/add`), computes latency statistics (avg / p95 / p99 / min / max),
 and writes the results into ClickHouse. Below is an example benchmark run:
 
-![Benchmark Summary](docs/images/benchmark-runner-output.png)
+![Benchmark Summary](./docs/images/benchmark-runner-output.png)
 ```
 
 ---
@@ -307,6 +309,7 @@ and writes the results into ClickHouse. Below is an example benchmark run:
 After each benchmark cycle, results are stored using `JSONEachRow` inserts.
 This enables fast analytical queries against past runs:
 
-![ClickHouse Results](docs/images/clickhouse-table-results.png)
+![ClickHouse Results](./docs/images/clickhouse-table-results.png)
 ```
+
 ---

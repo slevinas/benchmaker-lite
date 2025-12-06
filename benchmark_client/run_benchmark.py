@@ -38,7 +38,7 @@ async def save_summary_to_clickhouse(summary: Dict[str, Any]) -> None:
 
     async with ClickHouseClient() as ch:
         insert_results = await ch.insert_json_each_row("benchmark_results", [row])
-        print("Insert results:", insert_results)
+        # print("Insert results:", insert_results)
 
 async def worker(worker_id: int, latencies: list[float]) -> None:
     async with httpx.AsyncClient() as client:

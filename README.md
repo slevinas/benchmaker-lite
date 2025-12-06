@@ -23,10 +23,10 @@
 - [Running the Stack](#-running-the-entire-pipeline)
   - [Start Services](#1-start-dependencies)
   - [Run a Benchmark](#2-run-a-benchmark)
-  - [Query Results](#3-query-results)
+  - [Query Results](#3-query-results-manually)
 - [Why This Project Exists](#-why-this-project)
 - [Project Internals](#-project-internals)
-- [Roadmap](#roadmap)
+- [Roadmap](#-roadmap)
 - [License](#license)
 
 ---
@@ -259,5 +259,28 @@ Example summary row:
 | total_requests | avg_latency | p95_latency | timestamp |
 | -------------- | ----------- | ----------- | --------- |
 | 500            | 0.008       | 0.021       | now()     |
+
+---
+## 📌 Roadmap
+
+**Near-term (1–2 weeks)**
+
+* [ ] Add latency histograms via OTEL Metrics SDK
+* [ ] Add ClickHouse aggregation views (p95, p99, percentiles)
+* [ ] Add automatic CSV export for benchmark reports
+* [ ] Add Docker image publishing (GHCR)
+
+**Mid-term (1 month)**
+
+* [ ] Add distributed load testing mode (multiple workers)
+* [ ] Store OTEL traces in ClickHouse for drill-down analysis
+* [ ] Add Grafana dashboards (ClickHouse plugin)
+
+**Long-term (future)**
+
+* [ ] Support multiple benchmark targets
+* [ ] Add gRPC benchmark target
+* [ ] Add synthetic failure injection + resiliency testing mode
+* [ ] Convert project into reusable Python package (`pip install benchmaker-lite`)
 
 ---

@@ -90,7 +90,7 @@ class ClickHouseClient:
         # We pass SQL via the 'query' param. Body is optional (for INSERT).
         params = f"{self._auth_params()}&query={sql}"
         url = f"{self._base_url}/?{params}"
-        print(f"ClickHouseClient POST URL: {url}")  # Debugging line
+        # print(f"ClickHouseClient POST URL: {url}")  # Debugging line
 
         resp = await self._client.post(url, content=data)
         resp.raise_for_status()

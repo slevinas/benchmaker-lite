@@ -3,10 +3,10 @@ from __future__ import annotations
 import asyncio
 import time
 from typing import Any, Dict, List
-
+import json
 import httpx
 
-from .utils import summarize_latencies
+from .utils import summarize_latencies, print_table
 # from benchmark_client.clickhouse import save_summary
 from clickhouse import ClickHouseClient 
 
@@ -16,8 +16,8 @@ from clickhouse import ClickHouseClient
 # logger.info(f"[conftest] Loaded .env from {ENV_FILE}")
 
 API_URL = "http://localhost:8000/api/vector/add"
-CONCURRENCY = 10
-REQUESTS_PER_WORKER = 50
+CONCURRENCY = 1
+REQUESTS_PER_WORKER = 1
 
 
 async def save_summary_to_clickhouse(summary: Dict[str, Any]) -> None:
@@ -51,6 +51,16 @@ async def worker(worker_id: int, latencies: list[float]) -> None:
             # In a real system you’d add error handling / retries.
             resp.raise_for_status()
             latencies.append(duration)
+            try:
+                body = resp.json()
+                print("------------------------------")
+                print(" ")
+                print(json.dumps(body, indent=2))
+                print("------------------------------")
+                # logger.debug("upload response JSON: %s", body)  
+            except Exception:
+                body = {"text": resp.text[:2000]}
+                # logger.warning("non-JSON response (showing first 2k chars)")
 
 
 async def run_benchmark() -> None:
@@ -75,10 +85,20 @@ async def run_benchmark() -> None:
     await save_summary_to_clickhouse(summary)
     async with ClickHouseClient() as ch:
         print("\nVerifying saved benchmark results:")
-        query_results = await ch.execute("SELECT * \
+        verification_results_raw = await ch.execute("SELECT * \
                                          FROM benchmark_results \
                                          ORDER BY timestamp DESC")
-    print(query_results)
+    print(verification_results_raw)
+    # Format ClickHouse output into rows
+    parsed = []
+    # for line in verification_results_raw.strip().splitlines():
+    #     parts = line.split()  # crude split, but works because your table is simple
+    #     if len(parts) >= 7:
+    #         parsed.append(parts)
+
+    # headers = ["timestamp", "endpoint", "avg", "p95", "p99", "min", "max", "req"]
+    # print("\n=== Recent Benchmark Results ===")
+    # print_table(parsed, headers)
 
 if __name__ == "__main__":
     asyncio.run(run_benchmark())

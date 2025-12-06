@@ -16,6 +16,12 @@ exporters:
   debug:
     verbosity: basic
 
+  file/metrics:
+    path: /otel-collector/logs/otel_metrics.json
+
+  file/traces:
+    path: /otel-collector/logs/otel_traces.json
+
   # ClickHouse exporter for traces + metrics
   # clickhouse:
   #   endpoint: "tcp://clickhouse:9000?dial_timeout=10s&compress=lz4"
@@ -30,9 +36,9 @@ service:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [debug]
+      exporters: [file/traces, debug]
 
     metrics:
       receivers: [otlp]
       processors: [batch]
-      exporters: [debug]
+      exporters: [file/metrics, debug]

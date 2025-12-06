@@ -26,6 +26,7 @@ async def save_summary_to_clickhouse(summary: Dict[str, Any]) -> None:
     Adjust the mapping to match your actual benchmark_results schema.
     """
     row = {
+        "endpoint": API_URL,
         "total_requests": summary["count"],
         "avg_latency": summary["avg"],
         "p95_latency": summary["p95"],
@@ -36,7 +37,8 @@ async def save_summary_to_clickhouse(summary: Dict[str, Any]) -> None:
     }
 
     async with ClickHouseClient() as ch:
-        await ch.insert_json_each_row("benchmark_results", [row])
+        insert_results = await ch.insert_json_each_row("benchmark_results", [row])
+        print("Insert results:", insert_results)
 
 async def worker(worker_id: int, latencies: list[float]) -> None:
     async with httpx.AsyncClient() as client:
@@ -68,12 +70,15 @@ async def run_benchmark() -> None:
         print(f"{k}: {v}")
 
     # Save the summary into ClickHouse
-    # print("\nSaving summary to ClickHouse...")
+    print("\nSaving summary to ClickHouse...")
     # await save_summary(summary, endpoint=API_URL)
-    # await save_summary_to_clickhouse(summary)
-    # print("Saved.")
-    print(summary) # {'count': 500, 'avg': 0.008572817170992494, 'p95': 0.01746875001117587, 'min': 0.0019296249374747276, 'max': 0.07179562514647841}
-
+    await save_summary_to_clickhouse(summary)
+    async with ClickHouseClient() as ch:
+        print("\nVerifying saved benchmark results:")
+        query_results = await ch.execute("SELECT * \
+                                         FROM benchmark_results \
+                                         ORDER BY timestamp DESC")
+    print(query_results)
 
 if __name__ == "__main__":
     asyncio.run(run_benchmark())

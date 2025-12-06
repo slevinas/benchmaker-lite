@@ -1,208 +1,186 @@
-# **📊 Benchmaker-Lite — FastAPI Benchmarking + Observability Pipeline**
+# **Benchmaker-Lite — FastAPI Benchmarking & Observability Pipeline**
 
-A small but complete DevOps + Observability project demonstrating:
+<p align="left">
+  <img src="https://img.shields.io/badge/Python-3.11+-blue.svg" />
+  <img src="https://img.shields.io/badge/FastAPI-Instrumented%20with%20OTel-009688.svg" />
+  <img src="https://img.shields.io/badge/ClickHouse-Analytics%20DB-yellow.svg" />
+  <img src="https://img.shields.io/badge/OpenTelemetry-Collector%20Pipeline-purple.svg" />
+  <img src="https://img.shields.io/badge/Asyncio-Concurrency%20Testing-orange.svg" />
+  <img src="https://img.shields.io/badge/Docker-Compose-green.svg" />
+  <img src="https://img.shields.io/badge/Status-Active%20Project-brightgreen.svg" />
+</p>
 
-- FastAPI service instrumented with **OpenTelemetry**
-- Async benchmark client using **httpx + asyncio**
-- OpenTelemetry Collector receiving traces/metrics
-- Exporting telemetry into **ClickHouse**
-- Docker Compose orchestration across all components
-- Benchmark storage, analysis queries, and end-to-end reproducibility
 
+## Table of Contents
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Components](#components)
+  - [FastAPI Benchmark Target](#1-fastapi-benchmark-target)
+  - [Async Benchmark Client](#2-async-benchmark-client)
+  - [ClickHouse Layer](#3-clickhouse--db-layer)
+  - [OpenTelemetry Collector](#4-opentelemetry-collector)
+- [Schema](#schema)
+- [Running the Stack](#running-the-stack)
+  - [Start Services](#1-start-services)
+  - [Run a Benchmark](#2-run-a-benchmark)
+  - [Query Results](#3-query-results)
+- [Why This Project Exists](#why-this-project)
+- [Project Internals](#project-internals)
+- [Roadmap](#roadmap)
+- [License](#license)
+
+
+
+Benchmaker-Lite is a **fully containerized benchmarking and observability system** built around:
+
+- **FastAPI** (instrumented with OpenTelemetry)
+- **OpenTelemetry Collector** (file + debug exporters)
+- **ClickHouse** (analytics DB)
+- **Async Python benchmark client** (httpx + asyncio)
+- **Custom ClickHouse client** (env-driven config, JSONEachRow inserts)
+
+It demonstrates real-world DevOps, observability, performance engineering, and backend automation patterns.
 
 ---
 
-### 1️⃣ Observability Pipeline Diagram
+# 📐 **Architecture Overview**
 
-```mermaid
-flowchart LR
-    subgraph App["FastAPI App (benchmaker-lite)"]
-        A[Incoming HTTP Requests]
-        B[Business Logic / Vector Ops]
-        C[OTel SDK<br/>Traces & Metrics]
-        A --> B --> C
-    end
-
-    C --> D[OTLP Exporter]
-
-    subgraph Collector["OTel Collector"]
-        D --> E[Receivers (otlp)]
-        E --> F[Processors<br/>(batch, attributes, transform)]
-        F --> G[Exporters<br/>(clickhouse / file)]
-    end
-
-    G --> H[Fluent Bit (optional)]
-    H --> I[ClickHouse]
-
-    I --> J[Analytics / Queries<br/>(latency, errors, throughput)]
+```
+                      ┌──────────────────────┐
+                      │   Benchmark Client    │
+                      │  (asyncio + httpx)    │
+                      │  generate load / run  │
+                      └───────────┬───────────┘
+                                  │
+                                  ▼
+                     POST /api/vector/add (FastAPI)
+                                  │
+                                  ▼
+                ┌────────────────────────────────────┐
+                │        FastAPI Service              │
+                │  - Vector-add endpoint              │
+                │  - OTel instrumentation (SDK)       │
+                │  - Emits traces & metrics           │
+                └─────────────────┬───────────────────┘
+                                  │  OTLP/gRPC
+                                  ▼
+               ┌──────────────────────────────────────┐
+               │        OpenTelemetry Collector        │
+               │  - Receives telemetry                 │
+               │  - Batching processor                 │
+               │  - Exports: file(traces), file(metrics) │
+               │  - Debug exporter (stdout)            │
+               └─────────────────┬────────────────────┘
+                                  │
+                              ETL / Ingest
+                                  │
+                                  ▼
+              ┌────────────────────────────────────────┐
+              │               ClickHouse                │
+              │  - schema: benchmark_results           │
+              │  - JSONEachRow inserts                 │
+              │  - analytical queries (p95, p99, etc.) │
+              └────────────────────────────────────────┘
 ```
 
-### 2️⃣ Benchmaker-lite System Diagram
-
-```mermaid
-flowchart LR
-    U[Developer / Engineer] --> CLI[Benchmark CLI (Python)]
-    CLI -->|async httpx| BM[Benchmark Runner]
-
-    subgraph Runner["Benchmark Runner"]
-        BM -->|N concurrent requests| API[(FastAPI Service)]
-        BM --> MET[Benchmark Summary<br/>(latency stats, errors)]
-    end
-
-    API --> OTel[OTel SDK]
-    OTel --> COL[OTel Collector]
-    COL --> CH[ClickHouse]
-
-    MET --> CH
-    CH --> Q[Analysis / Visualization<br/>(SQL queries, notebooks)]
-```
 ---
 
-## **🚀 Features**
+# ⚙️ **Components**
 
-### **Benchmarking**
+### **1. `/api` — FastAPI Benchmark Target**
 
-- Async Python client (`httpx`) sending thousands of requests
-- Measures: p95/p99 latency, min/max, total throughput
-- Stores summary into ClickHouse (`benchmark_results` table)
+- Implements `/api/vector/add`
+- Instrumented with OpenTelemetry SDK
+- Emits traces & metrics to OTEL Collector
+- Designed for load-generation & latency measurement
 
-### **Observability**
+### **2. `/benchmark_client` — Async Python Runner**
 
-- Automatic OTEL instrumentation of FastAPI routes
-- Real traces emitted per benchmark request
-- Collector pipelines exporting to ClickHouse
-- Schema auto-created (`otel_traces`, `otel_metrics_*`)
+- Uses `httpx.AsyncClient` + `asyncio`
+- Launches concurrent workers
+- Computes:
 
-### **DevOps**
+  - avg latency
+  - p95, p99
+  - min/max
 
-- Multi-container Docker Compose setup
-- Resilient startup (collector waits for ClickHouse)
-- Configuration via environment variables
-- All services run locally with one command:
+- Stores structured results into ClickHouse
+- Can fetch and display recent benchmark history
+
+### **3. `/clickhouse` — DB Layer**
+
+Includes:
+
+- `client.py` (custom ClickHouse HTTP client)
+- `init.sql` (schema definitions)
+- Config-driven table design for benchmark analytics
+
+Table:
+
+```sql
+CREATE TABLE benchmark_results (
+    timestamp       DateTime DEFAULT now(),
+    endpoint        String,
+    avg_latency     Float64,
+    p95_latency     Float64,
+    p99_latency     Float64,
+    min_latency     Float64,
+    max_latency     Float64,
+    total_requests  UInt32
+) ENGINE = MergeTree()
+ORDER BY (timestamp, endpoint);
+```
+
+### **4. `/otel` — OpenTelemetry Collector**
+
+- Receives FastAPI telemetry
+- Writes traces/metrics to local file
+- Debug exporter for introspection
+
+---
+
+# 🐳 **Running the Entire Pipeline**
+
+### **1. Start dependencies**
 
 ```bash
 docker-compose up --build
 ```
 
----
+This launches:
 
-## **🧱 Architecture  Diagram**
+- ClickHouse
+- OTEL Collector
+- FastAPI benchmark service
 
-
-```
-                        ┌────────────────────────┐
-                        │     Benchmark Client    │
-                        │  (async httpx load gen) │
-                        └────────────┬────────────┘
-                                     │
-                                     ▼
-                         HTTP Requests (load)
-                                     │
-                                     ▼
-                   ┌─────────────────────────────────┐
-                   │             FastAPI              │
-                   │  - /vector/add benchmark route   │
-                   │  - /health                       │
-                   ├─────────────────────────────────┤
-                   │  OTEL SDK Instrumentation        │
-                   │  - Traces emitted per request    │
-                   │  - Metrics (latency counters)    │
-                   └──────────────────┬────────────────┘
-                                      │ OTLP (gRPC/HTTP)
-                                      ▼
-                        ┌────────────────────────────────┐
-                        │  OpenTelemetry Collector        │
-                        │---------------------------------│
-                        │ Receivers:                      │
-                        │   - otlp/http                   │
-                        │   - otlp/grpc                   │
-                        │ Processors:                     │
-                        │   - batch                       │
-                        │   - (optional transforms)       │
-                        │ Exporters:                      │
-                        │   - debug                       │
-                        │   - clickhouse (traces/metrics) │
-                        └──────────────────┬──────────────┘
-                                           │ TCP (9000)
-                                           ▼
-                         ┌──────────────────────────────────┐
-                         │            ClickHouse             │
-                         │-----------------------------------│
-                         │  Database: otel                   │
-                         │  Tables created automatically:    │
-                         │    - otel_traces                  │
-                         │    - otel_logs                    │
-                         │    - otel_metrics_*               │
-                         │                                   │
-                         │  Benchmark Results (manual insert)│
-                         │  stored into: default.bench...    │
-                         └───────────────────────────────────┘
-```
-## **Architecture Overview**
-### **What the architecture demonstrates**
-
-- Observability pipeline from code → telemetry → storage
-- Automation pipeline for benchmarking, latency measurement
-- Real-world DevOps stack (ClickHouse, OTEL Collector, Docker Compose)
-- Async load testing and benchmarking framework you built
-- Experience in distributed tracing, schema creation, and telemetry exports
-
----
-
----
-
-## **🧪 Running a Benchmark**
+### **2. Run a benchmark**
 
 ```bash
 python -m benchmark_client.run_benchmark
 ```
 
-Example output:
+Output:
 
 ```
-Benchmark Summary
-Total requests: 5000
-Avg latency: 0.0080s
-p95 latency: 0.021s
-p99 latency: 0.041s
-Min latency: 0.0017s
-Max latency: 0.0876s
+=== Benchmark Summary ===
+count: 500
+avg: 0.0103s
+p95: 0.0199s
+p99: 0.0642s
+min: 0.0041s
+max: 0.0888s
+
+Saving summary to ClickHouse...
+Saved.
+
+Fetching recent results...
+timestamp                  avg_latency     p95_latency   total_requests
+-----------------------------------------------------------------------
+2025-12-05 13:24:33        0.0103           0.0199         500
+...
 ```
 
----
-
-## **📦 Docker Stack**
-
-| Service              | Description                                          |
-| -------------------- | ---------------------------------------------------- |
-| **FastAPI app**      | Handles `/vector/add` requests and emits OTEL traces |
-| **OTEL Collector**   | Receives OTLP data and exports to ClickHouse         |
-| **ClickHouse**       | Stores traces, metrics, and benchmark results        |
-| **Benchmark Client** | Generates concurrent load using asyncio              |
-
----
-
-## **🔍 Querying Telemetry in ClickHouse**
-
-### Recent traces:
-
-```sql
-SELECT Timestamp, ServiceName, SpanName
-FROM otel_traces
-ORDER BY Timestamp DESC
-LIMIT 20;
-```
-
-### p95 latency (example for deeper analysis):
-
-```sql
-SELECT
-  quantile(0.95)(Duration) AS p95_latency
-FROM otel_traces
-WHERE ServiceName = 'benchmaker-lite-api';
-```
-
-### Benchmark summaries:
+### **3. Query results manually**
 
 ```sql
 SELECT *
@@ -213,43 +191,25 @@ LIMIT 10;
 
 ---
 
+# 📦 **Why This Project?**
 
+This system simulates a **real observability + benchmarking pipeline**:
 
+- Microservice exposing a performance-critical endpoint
+- Telemetry instrumentation & OTEL ingestion
+- Async load generation (multi-worker)
+- Persistance to ClickHouse for analytics
+- Queryable history of performance metrics
 
+It showcases:
 
+- DevOps automation
+- Distributed tracing
+- Telemetry pipelines
+- Backend benchmarking
+- Async Python tooling
+- ClickHouse data engineering
+- Docker Compose orchestration
+- Practical, production-style architecture
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# OTEL Collector Configuration
-
-This folder contains the configuration for the **OpenTelemetry Collector** used
-by `benchmaker-lite`.
-
-- `collector-config.yaml` – minimal pipeline:
-  - `otlp` receiver (gRPC + HTTP)
-  - `batch` processor
-  - `debug` exporter (prints spans to stdout)
-
-In a more advanced setup, you could:
-
-- Export traces/metrics directly into ClickHouse or another backend.
-- Add processors for attribute enriching, sampling, or redaction.
-- Add metrics/log pipelines alongside traces.
+---

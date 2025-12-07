@@ -302,7 +302,7 @@ and writes the results into ClickHouse. Below is an example benchmark run:
 After each benchmark cycle, results are stored using `JSONEachRow` inserts.
 This enables fast analytical queries against past runs:
 
-![ClickHouse Results](docs/images/clickhouse-table-results.png)
+![ClickHouse Results](docs/images/screenshot-benchmar_results_table_query.png)
 
 ---
 

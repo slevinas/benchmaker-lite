@@ -63,15 +63,11 @@
           #020309 100%
         );
         color: var(--text-main);
-        display: flex;
-        align-items: flex-start; /* align to top for hero-banner feel */
-        justify-content: center;
-        padding: 48px 24px;
         position: relative;
         overflow-x: hidden;
       }
 
-      /* subtle vignette so the big empty area feels intentional */
+      /* vignette stays the same */
       body::after {
         content: "";
         position: fixed;
@@ -96,8 +92,14 @@
         opacity: 0.55;
       }
 
+      .wrapper {
+        max-width: 1440px; /* main page width */
+        margin: 0 auto;
+        padding: 40px 24px 80px; /* top/bottom spacing */
+      }
+
+      /* HERO CARD */
       .page {
-        max-width: 1500px;
         width: 100%;
         background: radial-gradient(
             circle at top left,
@@ -111,50 +113,93 @@
           ),
           var(--bg-dark);
         border-radius: 28px;
-        padding: 48px 56px; /* less vertical padding = better proportions */
+        padding: 40px 48px;
         box-shadow: var(--shadow-soft);
         border: 1px solid rgba(255, 255, 255, 0.05);
         backdrop-filter: blur(18px);
 
         display: grid;
-        grid-template-columns: 2fr 1fr; /* slightly wider left */
-        gap: 40px;
-
-        /* REMOVE min-height AND scale */
+        grid-template-columns: minmax(0, 3fr) minmax(0, 2.2fr);
+        gap: 32px;
+        min-height: 320px;
       }
 
-      @media (min-width: 1600px) {
-        .page {
-          max-width: 1550px;
-          min-height: 60vh;
-          padding: 80px 70px;
-        }
+      /* PIPELINE SECTION UNDER HERO */
+
+      .section {
+        margin-top: 32px;
       }
+
+      .section-diagram {
+        background: rgba(5, 7, 24, 0.9);
+        border-radius: 24px;
+        padding: 24px 28px 28px;
+        border: 1px solid var(--border-subtle);
+        box-shadow: 0 18px 45px rgba(0, 0, 0, 0.7);
+      }
+
+      .section-diagram h2 {
+        margin: 0 0 8px;
+        font-size: 20px;
+      }
+
+      .section-diagram p {
+        margin: 0;
+        font-size: 14px;
+        color: var(--text-muted);
+      }
+
+      .pipeline {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        margin-top: 18px;
+      }
+
+      .pipe-node {
+        flex: 1 1 140px;
+        min-width: 140px;
+        padding: 10px 14px;
+        border-radius: 999px;
+        background: rgba(12, 16, 48, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        font-size: 13px;
+      }
+
+      .pipe-node span {
+        display: block;
+        margin-top: 2px;
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .pipe-arrow {
+        font-size: 18px;
+        opacity: 0.7;
+      }
+
+      /* responsive tweaks */
 
       @media (max-width: 1024px) {
-        .page {
-          max-width: 1000px;
-          padding: 48px 32px;
-          min-height: auto; /* let it shrink naturally on laptops/tablets */
+        .wrapper {
+          padding: 28px 16px 60px;
         }
 
-        body {
-          padding: 20px 16px;
-          align-items: flex-start;
+        .page {
+          padding: 32px 26px;
+          grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
         }
       }
 
       @media (max-width: 880px) {
         .page {
           grid-template-columns: 1fr;
-          padding: 24px 18px;
-          max-width: 680px;
-          min-height: auto;
+          padding: 22px 18px;
         }
 
-        body {
-          padding: 16px 10px;
-          align-items: flex-start;
+        .section-diagram {
+          padding: 20px 18px 22px;
         }
       }
 
@@ -329,81 +374,122 @@
     </style>
   </head>
   <body>
-    <main class="page">
-      <!-- LEFT -->
-      <section>
-        <div class="badge-row">
-          <div class="pill pill--accent">Benchmaker-Lite</div>
-          <div class="pill">FastAPI • OTEL • Collector • ClickHouse</div>
+    <div class="wrapper">
+      <main class="page">
+        <!-- LEFT -->
+        <section>
+          <div class="badge-row">
+            <div class="pill pill--accent">Benchmaker-Lite</div>
+            <div class="pill">FastAPI • OTEL • Collector • ClickHouse</div>
+          </div>
+
+          <h1>FastAPI Benchmarking & Observability Pipeline</h1>
+
+          <p class="subtitle">
+            A self-contained lab for testing API latency and behavior under load
+            — from async Python clients through FastAPI, OpenTelemetry
+            Collector, and ClickHouse analytics.
+          </p>
+
+          <p class="flow-line">
+            Client → FastAPI → OTEL → Collector → ClickHouse
+          </p>
+
+          <div class="cta-row">
+            <a
+              class="btn btn-primary"
+              href="https://github.com/slevinas/benchmaker-lite"
+              target="_blank"
+              rel="noreferrer"
+            >
+              View on GitHub
+            </a>
+            <a
+              class="btn btn-ghost"
+              href="https://github.com/slevinas/benchmaker-lite#running-the-entire-pipeline"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Run the pipeline →
+            </a>
+          </div>
+
+          <p class="note">
+            Built for real-world DevOps, observability, and performance-testing
+            interviews and demos. Uses Docker Compose for a one-command bring-up
+            of the entire stack.
+          </p>
+        </section>
+
+        <!-- RIGHT -->
+        <aside>
+          <div class="card">
+            <div class="card-title">Architecture at a glance</div>
+            <div class="diagram">
+              Benchmaker Client (async) → concurrent load FastAPI Benchmark
+              Target → metrics + traces (OTEL SDK) OpenTelemetry Collector →
+              export (HTTP / gRPC) ClickHouse → analytics: avg, p95, p99, N
+            </div>
+            <ul class="list">
+              <li>
+                <strong>FastAPI service</strong> with OTEL SDK instrumentation.
+              </li>
+              <li>
+                <strong>Async Python runner</strong> built on
+                <code>httpx + asyncio</code>.
+              </li>
+              <li>
+                <strong>OpenTelemetry Collector</strong> for ingest/export.
+              </li>
+              <li>
+                <strong>ClickHouse</strong> schema for benchmark summaries.
+              </li>
+            </ul>
+            <div class="tag-row">
+              <span class="tag">DevOps</span>
+              <span class="tag">Observability</span>
+              <span class="tag">API benchmarking</span>
+              <span class="tag">Python</span>
+              <span class="tag">FastAPI</span>
+            </div>
+          </div>
+        </aside>
+      </main>
+
+      <!-- NEW PIPELINE SECTION -->
+      <section class="section section-diagram">
+        <h2>End-to-end benchmarking pipeline</h2>
+        <p>
+          Benchmaker-Lite simulates a realistic high-throughput path from async
+          clients, through an instrumented FastAPI service and OpenTelemetry
+          Collector, into ClickHouse for fast queryable benchmarks.
+        </p>
+
+        <div class="pipeline">
+          <div class="pipe-node">
+            Async client
+            <span>httpx + asyncio, load profiles</span>
+          </div>
+          <div class="pipe-arrow">→</div>
+
+          <div class="pipe-node">
+            FastAPI benchmark target
+            <span>Instrumented with OTEL SDK</span>
+          </div>
+          <div class="pipe-arrow">→</div>
+
+          <div class="pipe-node">
+            OTEL Collector
+            <span>Receives traces / metrics</span>
+          </div>
+          <div class="pipe-arrow">→</div>
+
+          <div class="pipe-node">
+            ClickHouse
+            <span>Aggregated latency &amp; throughput</span>
+          </div>
         </div>
-
-        <h1>FastAPI Benchmarking & Observability Pipeline</h1>
-
-        <p class="subtitle">
-          A self-contained lab for testing API latency and behavior under load —
-          from async Python clients through FastAPI, OpenTelemetry Collector,
-          and ClickHouse analytics.
-        </p>
-
-        <p class="flow-line">
-          Client → FastAPI → OTEL → Collector → ClickHouse
-        </p>
-
-        <div class="cta-row">
-          <a
-            class="btn btn-primary"
-            href="https://github.com/slevinas/benchmaker-lite"
-            target="_blank"
-            rel="noreferrer"
-          >
-            View on GitHub
-          </a>
-          <a
-            class="btn btn-ghost"
-            href="https://github.com/slevinas/benchmaker-lite#running-the-entire-pipeline"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Run the pipeline →
-          </a>
-        </div>
-
-        <p class="note">
-          Built for real-world DevOps, observability, and performance-testing
-          interviews and demos. Uses Docker Compose for a one-command bring-up
-          of the entire stack.
-        </p>
       </section>
-
-      <!-- RIGHT -->
-      <aside>
-        <div class="card">
-          <div class="card-title">Architecture at a glance</div>
-          <div class="diagram">
-            Benchmaker Client (async) ↓ concurrent load FastAPI Benchmark Target
-            ↓ metrics + traces (OTEL SDK) OpenTelemetry Collector ↓ export (HTTP
-            / gRPC) ClickHouse ↓ analytics: avg, p95, p99, N
-          </div>
-          <ul class="list">
-            <li>
-              <strong>FastAPI service</strong> with OTEL SDK instrumentation.
-            </li>
-            <li>
-              <strong>Async Python runner</strong> built on
-              <code>httpx + asyncio</code>.
-            </li>
-            <li><strong>OpenTelemetry Collector</strong> for ingest/export.</li>
-            <li><strong>ClickHouse</strong> schema for benchmark summaries.</li>
-          </ul>
-          <div class="tag-row">
-            <span class="tag">DevOps</span>
-            <span class="tag">Observability</span>
-            <span class="tag">API benchmarking</span>
-            <span class="tag">Python</span>
-            <span class="tag">FastAPI</span>
-          </div>
-        </div>
-      </aside>
-    </main>
+    </div>
   </body>
 </html>

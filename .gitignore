@@ -35,4 +35,4 @@ htmlcov/
 .DS_Store
 
 
-docs/*.md
+docs/*.mdotel/logs/

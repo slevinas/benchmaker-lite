@@ -64,9 +64,9 @@
         );
         color: var(--text-main);
         display: flex;
-        align-items: flex-start;
+        align-items: center; /* center vertically instead of flex-start */
         justify-content: center;
-        padding: 32px 24px; /* smaller top padding so card sits higher */
+        padding: 24px; /* smaller, even padding */
         position: relative;
         overflow-x: hidden;
       }
@@ -99,6 +99,7 @@
       .page {
         max-width: 1450px;
         width: 100%;
+        min-height: 65vh; /* take about 2/3 of the viewport height */
         background: radial-gradient(
             circle at top left,
             rgba(130, 94, 255, 0.28) 0,
@@ -111,46 +112,48 @@
           ),
           var(--bg-dark);
         border-radius: 28px;
-        padding: 60px;
+        padding: 72px 64px; /* more padding = taller, more “hero” */
         box-shadow: var(--shadow-soft);
         border: 1px solid rgba(255, 255, 255, 0.05);
         backdrop-filter: blur(18px);
         display: grid;
         grid-template-columns: minmax(0, 3.2fr) minmax(0, 2.4fr);
-        gap: 32px;
-        transform: scale(1.12); /* scale card up for big screens */
-        transform-origin: top center;
+        gap: 40px;
+        transform: none; /* remove scale; height is handling the “bigness” now */
       }
 
       @media (min-width: 1600px) {
         .page {
           max-width: 1550px;
-          transform: scale(1.16);
+          min-height: 60vh;
+          padding: 80px 70px;
         }
       }
 
       @media (max-width: 1024px) {
         .page {
           max-width: 1000px;
-          padding: 40px;
-          transform: scale(1.02);
+          padding: 48px 32px;
+          min-height: auto; /* let it shrink naturally on laptops/tablets */
         }
 
         body {
-          padding: 24px 16px;
+          padding: 20px 16px;
+          align-items: flex-start;
         }
       }
 
       @media (max-width: 880px) {
         .page {
           grid-template-columns: 1fr;
-          padding: 22px;
+          padding: 24px 18px;
           max-width: 680px;
-          transform: none; /* avoid overflow on small screens */
+          min-height: auto;
         }
 
         body {
           padding: 16px 10px;
+          align-items: flex-start;
         }
       }
 

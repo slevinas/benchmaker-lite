@@ -293,7 +293,7 @@ The benchmark client runs a high-concurrency async workload against the FastAPI
 endpoint (`/api/vector/add`), computes latency statistics (avg / p95 / p99 / min / max),
 and writes the results into ClickHouse. Below is an example benchmark run:
 
-![Benchmark Summary](docs/images/benchmark-runner-outputs.png)
+![Benchmark Summary](docs/images/Screenshot-pipeline-execution-results.png)
 
 ---
 

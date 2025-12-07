@@ -91,14 +91,16 @@ async def run_benchmark() -> None:
     print(verification_results_raw)
     # Format ClickHouse output into rows
     parsed = []
-    # for line in verification_results_raw.strip().splitlines():
-    #     parts = line.split()  # crude split, but works because your table is simple
-    #     if len(parts) >= 7:
-    #         parsed.append(parts)
+    for line in verification_results_raw.strip().splitlines():
+        parts = line.split()  # crude split, but works because your table is simple
+        if len(parts) >= 7:
+            parsed.append(parts)
+            # You can further process each line as needed
+    # print(f"\nParsed {parsed} rows from ClickHouse:")
 
-    # headers = ["timestamp", "endpoint", "avg", "p95", "p99", "min", "max", "req"]
-    # print("\n=== Recent Benchmark Results ===")
-    # print_table(parsed, headers)
+    headers = ["timestamp", "endpoint", "avg", "p95", "p99", "min", "max", "req"]
+    print("\n=== Recent Benchmark Results ===")
+    print_table(parsed, headers)
 
 if __name__ == "__main__":
     asyncio.run(run_benchmark())

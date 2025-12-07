@@ -41,7 +41,7 @@
         --text-muted: #a6a8c9;
         --border-subtle: rgba(255, 255, 255, 0.06);
         --radius-xl: 20px;
-        --shadow-soft: 0 18px 45px rgba(0, 0, 0, 0.55);
+        --shadow-soft: 0 24px 60px rgba(0, 0, 0, 0.7);
         --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
           "Liberation Mono", "Courier New", monospace;
         --sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
@@ -58,19 +58,46 @@
         font-family: var(--sans);
         background: radial-gradient(
           circle at top,
-          #13162b 0,
-          #050712 55%,
+          #161936 0,
+          #050712 50%,
           #020309 100%
         );
         color: var(--text-main);
         display: flex;
         align-items: flex-start;
         justify-content: center;
-        padding: 32px 24px;
+        padding: 32px 24px; /* smaller top padding so card sits higher */
+        position: relative;
+        overflow-x: hidden;
+      }
+
+      /* subtle vignette so the big empty area feels intentional */
+      body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background: radial-gradient(
+            circle at 50% 0%,
+            rgba(255, 255, 255, 0.07),
+            transparent 55%
+          ),
+          radial-gradient(
+            circle at 10% 90%,
+            rgba(92, 77, 255, 0.15),
+            transparent 60%
+          ),
+          radial-gradient(
+            circle at 90% 100%,
+            rgba(255, 90, 196, 0.18),
+            transparent 60%
+          );
+        mix-blend-mode: screen;
+        opacity: 0.55;
       }
 
       .page {
-        max-width: 1450px; /* was 1100px */
+        max-width: 1450px;
         width: 100%;
         background: radial-gradient(
             circle at top left,
@@ -84,21 +111,46 @@
           ),
           var(--bg-dark);
         border-radius: 28px;
-        padding: 60px; /* was 32px */
-        transform: scale(1.1); /* <-- KEY: scale card up by 10% */
-        transform-origin: top center;
+        padding: 60px;
         box-shadow: var(--shadow-soft);
         border: 1px solid rgba(255, 255, 255, 0.05);
         backdrop-filter: blur(18px);
         display: grid;
-        grid-template-columns: minmax(0, 3.2fr) minmax(0, 2.3fr);
-        gap: 32px; /* was 28px */
+        grid-template-columns: minmax(0, 3.2fr) minmax(0, 2.4fr);
+        gap: 32px;
+        transform: scale(1.12); /* scale card up for big screens */
+        transform-origin: top center;
       }
 
-      @media (min-width: 1400px) {
+      @media (min-width: 1600px) {
         .page {
-          max-width: 1320px;
-          padding: 48px;
+          max-width: 1550px;
+          transform: scale(1.16);
+        }
+      }
+
+      @media (max-width: 1024px) {
+        .page {
+          max-width: 1000px;
+          padding: 40px;
+          transform: scale(1.02);
+        }
+
+        body {
+          padding: 24px 16px;
+        }
+      }
+
+      @media (max-width: 880px) {
+        .page {
+          grid-template-columns: 1fr;
+          padding: 22px;
+          max-width: 680px;
+          transform: none; /* avoid overflow on small screens */
+        }
+
+        body {
+          padding: 16px 10px;
         }
       }
 
@@ -128,21 +180,21 @@
 
       h1 {
         margin: 0 0 12px;
-        font-size: clamp(34px, 3.8vw, 46px); /* was clamp(30px, 3.1vw, 38px) */
+        font-size: clamp(34px, 3.8vw, 46px);
       }
 
       .subtitle {
         margin: 0 0 18px;
         font-size: 18px;
         color: var(--text-muted);
-        max-width: 34rem;
+        max-width: 36rem;
       }
 
       .flow-line {
         font-family: var(--mono);
-        font-size: 13px;
+        font-size: 14px;
         color: var(--accent);
-        margin-bottom: 18px;
+        margin-bottom: 20px;
       }
 
       .cta-row {
@@ -154,8 +206,8 @@
 
       .btn {
         border-radius: 999px;
-        padding: 10px 18px;
-        font-size: 14px;
+        padding: 12px 22px;
+        font-size: 15px;
         font-weight: 500;
         border: 1px solid transparent;
         cursor: pointer;
@@ -172,12 +224,12 @@
       .btn-primary {
         background-image: var(--bg-gradient);
         color: white;
-        box-shadow: 0 10px 22px rgba(75, 44, 255, 0.55);
+        box-shadow: 0 12px 28px rgba(75, 44, 255, 0.7);
       }
 
       .btn-primary:hover {
         transform: translateY(-1px);
-        box-shadow: 0 16px 40px rgba(75, 44, 255, 0.8);
+        box-shadow: 0 18px 42px rgba(75, 44, 255, 0.9);
       }
 
       .btn-ghost {
@@ -195,6 +247,7 @@
       .note {
         font-size: 12px;
         color: var(--text-muted);
+        max-width: 34rem;
       }
 
       /* Right column */
@@ -208,11 +261,11 @@
           var(--card-bg);
         border-radius: var(--radius-xl);
         border: 1px solid var(--border-subtle);
-        padding: 18px 18px 8px;
+        padding: 18px 18px 10px;
         display: flex;
         flex-direction: column;
         gap: 12px;
-        box-shadow: 0 14px 35px rgba(0, 0, 0, 0.6);
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
       }
 
       .card-title {
@@ -226,7 +279,7 @@
         list-style: none;
         padding: 0;
         margin: 0;
-        font-size: 13px;
+        font-size: 14px;
         color: var(--text-muted);
       }
 
@@ -258,7 +311,7 @@
       }
 
       .tag {
-        font-size: 11px;
+        font-size: 12px;
         padding: 4px 10px;
         border-radius: 999px;
         background: rgba(12, 16, 48, 0.9);

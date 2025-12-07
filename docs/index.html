@@ -64,9 +64,9 @@
         );
         color: var(--text-main);
         display: flex;
-        align-items: center; /* center vertically instead of flex-start */
+        align-items: flex-start; /* align to top for hero-banner feel */
         justify-content: center;
-        padding: 24px; /* smaller, even padding */
+        padding: 48px 24px;
         position: relative;
         overflow-x: hidden;
       }
@@ -97,29 +97,30 @@
       }
 
       .page {
-        max-width: 1450px;
+        max-width: 1500px;
         width: 100%;
-        min-height: 65vh; /* take about 2/3 of the viewport height */
         background: radial-gradient(
             circle at top left,
-            rgba(130, 94, 255, 0.28) 0,
+            rgba(130, 94, 255, 0.25) 0,
             transparent 55%
           ),
           radial-gradient(
             circle at bottom right,
-            rgba(255, 90, 196, 0.2) 0,
+            rgba(255, 90, 196, 0.18) 0,
             transparent 60%
           ),
           var(--bg-dark);
         border-radius: 28px;
-        padding: 72px 64px; /* more padding = taller, more “hero” */
+        padding: 48px 56px; /* less vertical padding = better proportions */
         box-shadow: var(--shadow-soft);
         border: 1px solid rgba(255, 255, 255, 0.05);
         backdrop-filter: blur(18px);
+
         display: grid;
-        grid-template-columns: minmax(0, 3.2fr) minmax(0, 2.4fr);
+        grid-template-columns: 2fr 1fr; /* slightly wider left */
         gap: 40px;
-        transform: none; /* remove scale; height is handling the “bigness” now */
+
+        /* REMOVE min-height AND scale */
       }
 
       @media (min-width: 1600px) {

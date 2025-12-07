@@ -93,10 +93,28 @@
       }
 
       .wrapper {
-        max-width: 1440px; /* main page width */
+        max-width: 1440px;
         margin: 0 auto;
-        padding: 40px 24px 80px; /* top/bottom spacing */
+        padding: 40px 24px 80px;
+        transform-origin: top center;
       }
+
+      /* desktop scaling */
+      @media (min-width: 1024px) {
+        .wrapper {
+          transform: scale(1.45); /* try 1.45, adjust if needed */
+        }
+
+        body {
+          padding-top: 32px; /* give space so scaled card isn't cut off */
+          padding-bottom: 80px;
+          display: flex;
+          justify-content: center;
+        }
+      }
+
+      /* keep your existing @media (max-width: 1024px) and (max-width: 880px)
+   so that on laptops/tablets/phones the layout is NOT scaled and remains readable */
 
       /* HERO CARD */
       .page {

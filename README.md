@@ -287,9 +287,6 @@ Example summary row:
 
 ---
 
-
-
-
 ## 📊 Example Benchmark Output
 
 The benchmark client runs a high-concurrency async workload against the FastAPI
@@ -298,11 +295,7 @@ and writes the results into ClickHouse. Below is an example benchmark run:
 
 ![Benchmark Summary](docs/images/benchmark-runner-output.png)
 
-
 ---
-
-
-
 
 ## 📂 Stored Benchmark Results in ClickHouse
 
@@ -310,7 +303,6 @@ After each benchmark cycle, results are stored using `JSONEachRow` inserts.
 This enables fast analytical queries against past runs:
 
 ![ClickHouse Results](docs/images/clickhouse-table-results.png)
-
 
 ---
 

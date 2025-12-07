@@ -287,29 +287,31 @@ Example summary row:
 
 ---
 
-## **📊 Example Benchmark Output (README Section)**
 
-```markdown
+
+
 ## 📊 Example Benchmark Output
 
 The benchmark client runs a high-concurrency async workload against the FastAPI
 endpoint (`/api/vector/add`), computes latency statistics (avg / p95 / p99 / min / max),
 and writes the results into ClickHouse. Below is an example benchmark run:
 
-![Benchmark Summary](./docs/images/benchmark-runner-output.png)
-```
+![Benchmark Summary](docs/images/benchmark-runner-output.png)
+
 
 ---
 
-## **📂 Stored Benchmark Results in ClickHouse**
 
-```markdown
+
+
 ## 📂 Stored Benchmark Results in ClickHouse
 
 After each benchmark cycle, results are stored using `JSONEachRow` inserts.
 This enables fast analytical queries against past runs:
 
-![ClickHouse Results](./docs/images/clickhouse-table-results.png)
-```
+![ClickHouse Results](docs/images/clickhouse-table-results.png)
+
 
 ---
+
+#### License

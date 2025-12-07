@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Benchmaker-Lite • FastAPI Benchmarking & Observability</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- SEO basics -->
+    <meta
+      name="description"
+      content="Benchmaker-Lite is a FastAPI-based benchmarking and observability pipeline using OpenTelemetry, Collector, and ClickHouse to test API latency at scale."
+    />
+
+    <!-- Open Graph / social preview -->
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:title"
+      content="Benchmaker-Lite • FastAPI Benchmarking & Observability"
+    />
+    <meta
+      property="og:description"
+      content="Client → FastAPI → OTEL → Collector → ClickHouse. A complete benchmarking + observability lab for API latency at scale."
+    />
+    <!-- After first deploy, update this URL to the PNG you want as preview -->
+    <meta
+      property="og:image"
+      content="https://slevinas.github.io/benchmaker-lite/benchmaker-lite-card.png"
+    />
+    <meta
+      property="og:url"
+      content="https://slevinas.github.io/benchmaker-lite/"
+    />
+
+    <style>
+      :root {
+        --bg-gradient: linear-gradient(135deg, #5b3df5, #c048ff);
+        --bg-dark: #050712;
+        --card-bg: #0b0e1f;
+        --accent: #ffdf6b;
+        --text-main: #f7f7ff;
+        --text-muted: #a6a8c9;
+        --border-subtle: rgba(255, 255, 255, 0.06);
+        --radius-xl: 20px;
+        --shadow-soft: 0 18px 45px rgba(0, 0, 0, 0.55);
+        --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+        --sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: var(--sans);
+        background: radial-gradient(
+          circle at top,
+          #13162b 0,
+          #050712 55%,
+          #020309 100%
+        );
+        color: var(--text-main);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 32px 16px;
+      }
+
+      .page {
+        max-width: 1100px;
+        width: 100%;
+        background: radial-gradient(
+            circle at top left,
+            rgba(130, 94, 255, 0.28) 0,
+            transparent 55%
+          ),
+          radial-gradient(
+            circle at bottom right,
+            rgba(255, 90, 196, 0.2) 0,
+            transparent 60%
+          ),
+          var(--bg-dark);
+        border-radius: 28px;
+        padding: 32px;
+        box-shadow: var(--shadow-soft);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(18px);
+        display: grid;
+        grid-template-columns: minmax(0, 3fr) minmax(0, 2.2fr);
+        gap: 28px;
+      }
+
+      @media (max-width: 880px) {
+        .page {
+          grid-template-columns: 1fr;
+          padding: 22px;
+        }
+      }
+
+      .badge-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+
+      .pill {
+        border-radius: 999px;
+        padding: 6px 12px;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        color: var(--text-muted);
+        background: rgba(0, 0, 0, 0.35);
+      }
+
+      .pill--accent {
+        border-color: rgba(255, 223, 107, 0.85);
+        color: var(--accent);
+        background: rgba(38, 30, 4, 0.9);
+      }
+
+      h1 {
+        margin: 0 0 10px;
+        font-size: clamp(30px, 3.1vw, 38px);
+      }
+
+      .subtitle {
+        margin: 0 0 16px;
+        font-size: 16px;
+        color: var(--text-muted);
+        max-width: 34rem;
+      }
+
+      .flow-line {
+        font-family: var(--mono);
+        font-size: 13px;
+        color: var(--accent);
+        margin-bottom: 18px;
+      }
+
+      .cta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .btn {
+        border-radius: 999px;
+        padding: 10px 18px;
+        font-size: 14px;
+        font-weight: 500;
+        border: 1px solid transparent;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: transform 0.1s ease-out, box-shadow 0.12s ease-out,
+          background 0.12s ease-out, border-color 0.12s ease-out,
+          color 0.12s ease-out;
+        white-space: nowrap;
+      }
+
+      .btn-primary {
+        background-image: var(--bg-gradient);
+        color: white;
+        box-shadow: 0 10px 22px rgba(75, 44, 255, 0.55);
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 16px 40px rgba(75, 44, 255, 0.8);
+      }
+
+      .btn-ghost {
+        background: rgba(12, 15, 40, 0.9);
+        color: var(--text-muted);
+        border-color: var(--border-subtle);
+      }
+
+      .btn-ghost:hover {
+        border-color: rgba(255, 255, 255, 0.4);
+        color: var(--text-main);
+        transform: translateY(-1px);
+      }
+
+      .note {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+
+      /* Right column */
+
+      .card {
+        background: radial-gradient(
+            circle at top,
+            rgba(255, 255, 255, 0.05) 0,
+            transparent 60%
+          ),
+          var(--card-bg);
+        border-radius: var(--radius-xl);
+        border: 1px solid var(--border-subtle);
+        padding: 18px 18px 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        box-shadow: 0 14px 35px rgba(0, 0, 0, 0.6);
+      }
+
+      .card-title {
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-muted);
+      }
+
+      .list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        font-size: 13px;
+        color: var(--text-muted);
+      }
+
+      .list li {
+        margin-bottom: 5px;
+      }
+
+      .list strong {
+        color: var(--text-main);
+        font-weight: 500;
+      }
+
+      .diagram {
+        font-family: var(--mono);
+        font-size: 11px;
+        background: rgba(0, 0, 0, 0.7);
+        border-radius: 14px;
+        padding: 12px 14px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        overflow-x: auto;
+        white-space: pre;
+      }
+
+      .tag-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+      }
+
+      .tag {
+        font-size: 11px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: rgba(12, 16, 48, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: var(--text-muted);
+      }
+
+      a {
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <!-- LEFT -->
+      <section>
+        <div class="badge-row">
+          <div class="pill pill--accent">Benchmaker-Lite</div>
+          <div class="pill">FastAPI • OTEL • Collector • ClickHouse</div>
+        </div>
+
+        <h1>FastAPI Benchmarking & Observability Pipeline</h1>
+
+        <p class="subtitle">
+          A self-contained lab for testing API latency and behavior under load —
+          from async Python clients through FastAPI, OpenTelemetry Collector,
+          and ClickHouse analytics.
+        </p>
+
+        <p class="flow-line">
+          Client → FastAPI → OTEL → Collector → ClickHouse
+        </p>
+
+        <div class="cta-row">
+          <a
+            class="btn btn-primary"
+            href="https://github.com/slevinas/benchmaker-lite"
+            target="_blank"
+            rel="noreferrer"
+          >
+            View on GitHub
+          </a>
+          <a
+            class="btn btn-ghost"
+            href="https://github.com/slevinas/benchmaker-lite#running-the-entire-pipeline"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Run the pipeline →
+          </a>
+        </div>
+
+        <p class="note">
+          Built for real-world DevOps, observability, and performance-testing
+          interviews and demos. Uses Docker Compose for a one-command bring-up
+          of the entire stack.
+        </p>
+      </section>
+
+      <!-- RIGHT -->
+      <aside>
+        <div class="card">
+          <div class="card-title">Architecture at a glance</div>
+          <div class="diagram">
+            Benchmaker Client (async) ↓ concurrent load FastAPI Benchmark Target
+            ↓ metrics + traces (OTEL SDK) OpenTelemetry Collector ↓ export (HTTP
+            / gRPC) ClickHouse ↓ analytics: avg, p95, p99, N
+          </div>
+          <ul class="list">
+            <li>
+              <strong>FastAPI service</strong> with OTEL SDK instrumentation.
+            </li>
+            <li>
+              <strong>Async Python runner</strong> built on
+              <code>httpx + asyncio</code>.
+            </li>
+            <li><strong>OpenTelemetry Collector</strong> for ingest/export.</li>
+            <li><strong>ClickHouse</strong> schema for benchmark summaries.</li>
+          </ul>
+          <div class="tag-row">
+            <span class="tag">DevOps</span>
+            <span class="tag">Observability</span>
+            <span class="tag">API benchmarking</span>
+            <span class="tag">Python</span>
+            <span class="tag">FastAPI</span>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </body>
+</html>

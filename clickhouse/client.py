@@ -21,7 +21,7 @@ ENV_FILE = REPO_ROOT / ".env"
 
 # Load .env into process environment
 load_dotenv(ENV_FILE)
-print(f"[clickhouse/client.py] Loaded .env from {ENV_FILE}")
+# print(f"[clickhouse/client.py] Loaded .env from {ENV_FILE}")
 
 
 @dataclass

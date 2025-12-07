@@ -361,13 +361,13 @@
 
       .diagram {
         font-family: var(--mono);
-        font-size: 13px;
+        font-size: 12px;
+        line-height: 1.4;
         background: rgba(0, 0, 0, 0.7);
         border-radius: 14px;
         padding: 12px 14px;
         border: 1px solid rgba(255, 255, 255, 0.08);
-        overflow-x: auto;
-        white-space: pre;
+        white-space: pre-wrap; /* keep our manual newlines, allow wrapping */
       }
 
       .tag-row {
@@ -444,10 +444,19 @@
           <div class="card">
             <div class="card-title">Architecture at a glance</div>
             <div class="diagram">
-              Benchmaker Client (async) → concurrent load FastAPI Benchmark
-              Target → metrics + traces (OTEL SDK) OpenTelemetry Collector →
-              export (HTTP / gRPC) ClickHouse → analytics: avg, p95, p99, N
+              Client (async) 
+               ↓ concurrent load
+
+              FastAPI benchmark target
+               ↓ metrics + traces (OTEL SDK) 
+               
+              OpenTelemetry Collector
+               ↓ export (HTTP / gRPC)
+               
+              ClickHouse
+               ↓ analytics: avg, p95, p99, N
             </div>
+
             <ul class="list">
               <li>
                 <strong>FastAPI service</strong> with OTEL SDK instrumentation.

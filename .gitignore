@@ -37,4 +37,4 @@ htmlcov/
 
 otel/logs/*
 
-docs/*.md
+docs/*.mdclickhouse-query

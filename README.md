@@ -1,9 +1,6 @@
 # **Benchmaker-Lite — FastAPI Benchmarking & Observability Pipeline**
 
-[🔗 Live landing page:]( https://slevinas.github.io/benchmaker-lite/)
-
-
-
+[🔗 Live landing page:](https://slevinas.github.io/benchmaker-lite/)
 
 <p align="left">
   <img src="https://img.shields.io/badge/Python-3.11+-blue.svg" />
@@ -313,4 +310,7 @@ This enables fast analytical queries against past runs:
 
 ---
 
-#### License
+## 📄 License
+
+Released under the MIT License.  
+See the `LICENSE` file for details.

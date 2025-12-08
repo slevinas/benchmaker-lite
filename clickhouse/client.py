@@ -56,7 +56,7 @@ class ClickHouseClient:
 
     def __init__(self, config: Optional[ClickHouseConfig] = None) -> None:
         self.config = config or ClickHouseConfig.from_env()
-        print(f"[ClickHouseClient] Config: {self.config}")
+        # print(f"[ClickHouseClient] Config: {self.config}")
         self._base_url = f"http://{self.config.host}:{self.config.port}"
         self._client: Optional[httpx.AsyncClient] = None
 

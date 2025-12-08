@@ -6,7 +6,7 @@ from typing import Any, Dict, List
 import json
 import httpx
 
-from .utils import summarize_latencies, print_table
+from .utils import summarize_latencies, print_table, secure_save_file
 # from benchmark_client.clickhouse import save_summary
 from clickhouse import ClickHouseClient 
 
@@ -16,8 +16,8 @@ from clickhouse import ClickHouseClient
 # logger.info(f"[conftest] Loaded .env from {ENV_FILE}")
 
 API_URL = "http://localhost:8000/api/vector/add"
-CONCURRENCY = 1
-REQUESTS_PER_WORKER = 1
+CONCURRENCY = 10
+REQUESTS_PER_WORKER = 50
 
 
 async def save_summary_to_clickhouse(summary: Dict[str, Any]) -> None:
@@ -51,15 +51,15 @@ async def worker(worker_id: int, latencies: list[float]) -> None:
             # In a real system you’d add error handling / retries.
             resp.raise_for_status()
             latencies.append(duration)
-            try:
-                body = resp.json()
-                print("------------------------------")
-                print(" ")
-                print(json.dumps(body, indent=2))
-                print("------------------------------")
-                # logger.debug("upload response JSON: %s", body)  
-            except Exception:
-                body = {"text": resp.text[:2000]}
+            # try:
+            #     body = resp.json()
+            #     print("------------------------------")
+            #     print(" ")
+            #     print(json.dumps(body, indent=2))
+            #     print("------------------------------")
+            #     # logger.debug("upload response JSON: %s", body)  
+            # except Exception:
+            #     body = {"text": resp.text[:2000]}
                 # logger.warning("non-JSON response (showing first 2k chars)")
 
 
@@ -88,19 +88,34 @@ async def run_benchmark() -> None:
         verification_results_raw = await ch.execute("SELECT * \
                                          FROM benchmark_results \
                                          ORDER BY timestamp DESC")
-    print(verification_results_raw)
+    # print(verification_results_raw)
+    # print(f"\nType of verification_results_raw: {type(verification_results_raw)}")
+    # secure_save_file("./clickhouse-query", data=verification_results_raw)
     # Format ClickHouse output into rows
-    parsed = []
+       # Format ClickHouse output into rows
+    parsed: list[list[str]] = []
     for line in verification_results_raw.strip().splitlines():
-        parts = line.split()  # crude split, but works because your table is simple
-        if len(parts) >= 7:
-            parsed.append(parts)
-            # You can further process each line as needed
-    # print(f"\nParsed {parsed} rows from ClickHouse:")
+        parts = line.split()
+        # Expect: date time endpoint avg p95 p99 min max req
+        if len(parts) >= 9:
+            date, time_str, endpoint, avg, p95, p99, min_, max_, req = parts[:9]
+            parsed.append([
+                date,
+                time_str,
+                endpoint,
+                avg,
+                p95,
+                p99,
+                min_,
+                max_,
+                req,
+            ])
 
-    headers = ["timestamp", "endpoint", "avg", "p95", "p99", "min", "max", "req"]
+    headers = ["date", "time", "endpoint", "avg", "p95", "p99", "min", "max", "req"]
+
     print("\n=== Recent Benchmark Results ===")
     print_table(parsed, headers)
+
 
 if __name__ == "__main__":
     asyncio.run(run_benchmark())

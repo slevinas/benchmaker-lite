@@ -445,9 +445,18 @@
           <div class="card">
             <div class="card-title">Architecture at a glance</div>
             <div class="diagram">
-              Client (async) ↓ concurrent load FastAPI benchmark target ↓
-              metrics + traces (OTEL SDK) OpenTelemetry Collector ↓ export (HTTP
-              / gRPC) ClickHouse ↓ analytics: avg, p95, p99, N
+              Client (async)
+               ↓ concurrent load 
+
+              FastAPI benchmark target
+               ↓ metrics + traces (OTEL SDK)
+
+              OpenTelemetry Collector
+               ↓ export (HTTP / gRPC)
+
+              ClickHouse
+               ↓ analytics: avg, p95, p99, N
+                Benchmark results table 
             </div>
 
             <ul class="list">
